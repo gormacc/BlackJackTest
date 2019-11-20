@@ -1,11 +1,8 @@
-import CardColorEnum as cc
 import CardSymbolEnum as cs
 
-
 class Card:
-    def __init__(self, color, symbol):
+    def __init__(self, symbol):
         self.symbol = cs.CardSymbolEnum(symbol)
-        self.color = cc.CardColorEnum(color)
 
     def getValue(self):
         if self.symbol == cs.CardSymbolEnum.Two:

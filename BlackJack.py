@@ -3,85 +3,73 @@ import Card as c
 import CardSymbolEnum as cs
 import matplotlib.pyplot as plt
 
-def pickACard(deck):
-    while(True):
-        randomColor = r.randint(0, 3)
-        randomSymbol = r.randint(0,12)
-        if deck[randomColor][randomSymbol] == False:
-            deck[randomColor][randomSymbol] = True
-            return c.Card(randomColor, randomSymbol)
+def pickACard():
+    return  c.Card(r.randint(0,12))
 
-def calculateScore(cards):
-    #count aces
-    aces = sum(1 if card.symbol == cs.CardSymbolEnum.Ace else 0 for card in cards)
-    #calculate points
-    points = sum(card.getValue() for card in cards)
-    #if point are more than 21 get ace as 1
-    for _ in range(aces):
-        if points > 21:
-            points = points - 10
-    
-    return points
+def calculateScore(points, card):
+    newPoints = points + card.getValue()
+    if(card.symbol == cs.CardSymbolEnum.Ace and newPoints > 21):
+        newPoints = newPoints - 10
+    return newPoints
 
-
-def simulateGame(playerLimit, dilerCard):
-    deck = [ [ False for i in range(13) ] for j in range(4) ]
-
-    dilerCards = []
-    playerCards = []
+def simulateGame(playerLimit):
+    playerPoints = 0
+    dealerPoints = 0
 
     #draw two cards
-    dilerCards.append(pickACard(deck))
-    playerCards.append(pickACard(deck))
-    dilerCards.append(pickACard(deck))
-    playerCards.append(pickACard(deck))    
-    
-    playerPoints = calculateScore(playerCards)
-    dilerPoints = calculateScore(dilerCards)
+    playerPoints = calculateScore(playerPoints, pickACard())
+    dealerCard = pickACard()
+    dealerPoints = calculateScore(dealerPoints, dealerCard)
+    playerPoints = calculateScore(playerPoints, pickACard())
+    dealerPoints = calculateScore(dealerPoints, pickACard())
 
-    if playerPoints < playerLimit and dilerCards[1].getValue() >= dilerCard:
-        playerCards.append(pickACard(deck))
+    playerChecks = False
+    while playerChecks == False:
+        
+        if playerPoints < playerLimit:
+            playerPoints = calculateScore(playerPoints, pickACard())    
+        else:
+            playerChecks = True
 
-    if dilerPoints < 16:
-        dilerCards.append(pickACard(deck))
-
-    playerPoints = calculateScore(playerCards)
-    dilerPoints = calculateScore(dilerCards)
-
-    #draw
-    if playerPoints > 21 and dilerPoints > 21:
-        return 0
-    if playerPoints == dilerPoints:
-        return 0
+        if dealerPoints < 17:
+            dealerPoints = calculateScore(dealerPoints, pickACard())
 
     #lose
-    if playerPoints > 21:
-        return -1
-    if playerPoints < dilerPoints and dilerPoints <= 21:
-        return -1
-    
-    #otherwise win
-    return 1
-    
-def runExperiment(playerLimit, dilerCards, iter = 10000):
+    if(playerPoints > 21):
+        return (dealerCard.getValue(), -1)
+    if playerPoints < dealerPoints and dealerPoints <= 21:
+        return (dealerCard.getValue(), -1)
+    #draw
+    if(playerPoints == dealerPoints):
+        return (dealerCard.getValue(), 0)
+    #win
+    return (dealerCard.getValue(), 1)
 
-    i = 1
-    fig = plt.figure()
-    fig.suptitle("Limit gracza : " + str(playerLimit))
-    fig.subplots_adjust(hspace=0.6, wspace=0.6)
 
-    for dilerCard in dilerCards:
-        #draw, win, lose
-        score = [0,0,0]
+def runExperiment(playerLimit, iter = 100000):
+    score = [0,0,0]
+    scoreCardsWins = [ 0 for j in range(13) ]
+    scoreCardsGames = [ 0 for j in range(13) ]
 
-        for _ in range(0, iter):
-            score[simulateGame(playerLimit, dilerCard)] += 1
-        
-        ax = fig.add_subplot(2,3,i)
-        ax.set_title("Minimum u krupiera : " + str(dilerCard))
-        ax.bar( range(0,3), (score[1], score[0], score[2]) )
-        ax.set_xticks( range(0,3))
-        ax.set_xticklabels(['WIN\n' + str(score[1]), 'DRAW\n' + str(score[0]), 'LOSE\n' + str(score[2])])
-        i = i + 1
 
+    for _ in range(0, iter):
+        result = simulateGame(playerLimit)
+        score[result[1]] += 1
+        scoreCardsGames[result[0]] += 1
+        if result[1] == 1:
+            scoreCardsWins[result[0]] += 1
+
+    #liczba wygranych , remisów i przegranych
+    plt.title("Limit gracza : " + str(playerLimit))
+    plt.bar(range(0,3), (score[1], score[0], score[2]))
+    plt.xticks(range(0,3), ['WIN\n' + str(score[1]), 'DRAW\n' + str(score[0]), 'LOSE\n' + str(score[2])])
+    plt.show()
+
+    #procent zwycięstw w zależności od widocznej karty krupiera
+    plt.title("Limit gracza : " + str(playerLimit))
+    x = range(2,12)
+    y = []
+    for i in x:
+        y.append(scoreCardsWins[i]/scoreCardsGames[i])
+    plt.plot(x, y)
     plt.show()
