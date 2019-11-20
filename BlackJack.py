@@ -23,16 +23,18 @@ def simulateGame(playerLimit):
     playerPoints = calculateScore(playerPoints, pickACard())
     dealerPoints = calculateScore(dealerPoints, pickACard())
 
-    playerChecks = False
-    while playerChecks == False:
+    stopGame = False
+    while stopGame == False:
         
         if playerPoints < playerLimit:
             playerPoints = calculateScore(playerPoints, pickACard())    
         else:
-            playerChecks = True
+            stopGame = True
 
         if dealerPoints < 17:
             dealerPoints = calculateScore(dealerPoints, pickACard())
+        else:
+            stopGame = True
 
     #lose
     if(playerPoints > 21):
